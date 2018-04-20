@@ -301,25 +301,99 @@ const Pillar = () => {
     return cycleValues[index % LIMIT];
   }
 
-  function indexOf({ stem, branch }) {
-    console.log(stem, branch);
+  function find({ stem, branch }) {
+    const search = _.find(
+      cycleValues,
+      {
+        stem: stem,
+        branch: branch
+      }
+    );
 
-    return 0;
+    return search;
   }
 
-  return { valueAt, indexOf };
+  function indexOf({ stem, branch }) {
+    return _.findIndex(cycleValues, find({stem, branch}));
+  }
+
+  function validate({ stem, branch }) {
+    return find({stem, branch}) !== undefined;
+  }
+
+  return { valueAt, indexOf, find, validate };
 };
 
 const FourPillars = (pillars, config) => {
-  let score = {
-    Wood: 0,
-    Fire: 0,
-    Earth: 0,
-    Metal: 0,
-    Water: 0,
-  };
+
+  // startup tasks - validate all pillar input, transform to full pillars
+  pillars = _.map(pillars, pillar => {
+    const ref = Pillar();
+    return ref.find({
+      stem: pillar.stem,
+      branch: pillar.branch
+    });
+  });
+  
+  if (!_.every(pillars)) {
+    throw new Error('Invalid pillar data - recheck input.');
+  }
+
+  function isPresent(params) {
+    const results = {};
+    params.values.forEach(term => {
+      results[params.name] = _.findIndex(
+        _.map(pillars, pillar => pillar[term.type]),
+        term.search
+      ) !== -1;
+    });
+
+    return results;
+  }
 
   function calculate() {
+    let score = {
+      wood: 0,
+      fire: 0,
+      earth: 0,
+      metal: 0,
+      water: 0,
+    };
+
+    const repeats = _(pillars)
+      .map(elem => elem.branch.english)
+      .groupBy()
+      .pickBy(elem => elem)
+      .value();
+
+    const used = [];
+
+    config.sets.forEach(set => {
+
+      // calculate matches
+      if (_.every(isPresent(set))) {
+        console.log('found:', set.name);
+
+        // calculate (x*y) combinations 
+        let multiplier = 1;
+        set.values.forEach(val => multiplier *= repeats[val.search.english].length);
+        score[set.type] += set.score * multiplier;
+
+        // mark used values
+        set.values.forEach(val => used.push(val.search.english));
+      }
+
+      // calculate unused remainders
+      const remains = _.difference(_.keys(repeats), used);
+      console.log('diff:', remains);
+
+      console.log(
+        _(pillars)
+          .filter(elem => _.includes(remains, elem.branch.english))
+          .value()
+      );
+    });
+
     return score;
   };
 
@@ -338,28 +412,39 @@ let test = FourPillars(
   // pillars
   {
     year: {
-
+      stem: {english: 'gui'},
+      branch: {english: 'you'}
     },
     month: {
-
+      stem: {english: 'jia'},
+      branch: {english: 'chen'}
     },
     day: {
-
+      stem: {english: 'jia'},
+      branch: {english: 'yin'}
     },
     hour: {
-
+      stem: {english: 'ding'},
+      branch: {english: 'mao'}
     }
   },
 
   // configuration for calculations
   {
-
+    unusedScore: 10,
+    sets: [
+      {
+        values: [
+          {type: 'branch', search: { english: 'yin' }},
+          {type: 'branch', search: { english: 'chen' }},
+          {type: 'branch', search: { english: 'mao' }},
+        ],
+        type: 'wood',
+        score: 100,
+        name: 'test name, wood 100'
+      }
+    ]
   }
 );
 
-let pillar = Pillar();
-console.log(pillar.valueAt(25));
-console.log(pillar.indexOf({
-  stem: {english: 'jia'},
-  branch: {english: 'zi'}
-}));
+console.log(test.calculate());
