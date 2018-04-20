@@ -329,10 +329,13 @@ const FourPillars = (pillars, config) => {
   // startup tasks - validate all pillar input, transform to full pillars
   pillars = _.map(pillars, pillar => {
     const ref = Pillar();
-    return ref.find({
+    const obj = ref.find({
       stem: pillar.stem,
       branch: pillar.branch
     });
+
+    // add unused flag to each pillar for calculations later
+    return {...obj, used: false};
   });
   
   if (!_.every(pillars)) {
@@ -380,18 +383,21 @@ const FourPillars = (pillars, config) => {
         score[set.type] += set.score * multiplier;
 
         // mark used values
-        set.values.forEach(val => used.push(val.search.english));
+        set.values.forEach(val => {
+          const filtered = _.filter(
+            pillars, 
+            item => item[val.type].english === val.search.english
+          );
+
+          filtered.forEach(pillar => pillar.used = true);
+        });
       }
 
       // calculate unused remainders
-      const remains = _.difference(_.keys(repeats), used);
-      console.log('diff:', remains);
-
-      console.log(
-        _(pillars)
-          .filter(elem => _.includes(remains, elem.branch.english))
-          .value()
-      );
+      _.filter(pillars, {used: false}).forEach(pillar => {
+        console.log(pillar, 'was unused, should add to', pillar.branch.elements);
+        pillar.branch.elements.forEach(elem => score[elem] += config.unusedValue);
+      });
     });
 
     return score;
@@ -399,14 +405,6 @@ const FourPillars = (pillars, config) => {
 
   return { calculate };
 };
-
-/*
-let test = ValueSet([1, 4, 5, 11, 3, 8, 1, 8, 4]);
-console.log('total score:', test.calculate());
-
-let testGen = SymbolGenerator();
-console.log(testGen.valueOf({ major: 'C', minor: 3 }));
-*/
 
 let test = FourPillars(
   // pillars
@@ -431,7 +429,7 @@ let test = FourPillars(
 
   // configuration for calculations
   {
-    unusedScore: 10,
+    unusedValue: 10,
     sets: [
       {
         values: [
