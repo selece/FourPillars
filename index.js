@@ -131,20 +131,19 @@ const FourPillars = (pillars, config) => {
       if (_.every(isPresent(set))) {
         console.log('found:', set.name);
 
-        // calculate (x*y) combinations 
+        // calculate (x*y) combinations & mark used pillars
         let multiplier = 1;
-        set.values.forEach(val => multiplier *= repeats[val.search[config.language]].length);
-        score[set.type] += set.score * multiplier;
-
-        // mark used values
-        set.values.forEach(val => {
-          const filtered = _.filter(
-            pillars, 
-            item => item[val.type][config.language] === val.search[config.language]
+        set.values.forEach(value => {
+          multiplier *= repeats[value.search[config.language]].length;
+          _.filter(
+            pillars,
+            item => item[value.type][config.language] === value.search[config.language]
+          ).forEach(
+            pillar => pillar.used = true
           );
-
-          filtered.forEach(pillar => pillar.used = true);
         });
+
+        score[set.type] += set.score * multiplier;
       }
     });
 
