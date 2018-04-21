@@ -1,247 +1,5 @@
 const _ = require('lodash');
 
-const SymbolGenerator = () => {
-  const symbolCount = 60;
-  const gen = combinedGenerator();
-  const values = _.times(symbolCount, () => gen.next().value);
-
-  function* seriesGenerator(values) {
-    let current = 0;
-
-    while (true) {
-      yield values[current];
-
-      current += 1;
-
-      if (current >= values.length) {
-        current = 0;
-      }
-    }
-  }
-
-  function* combinedGenerator() {
-    let major = seriesGenerator([
-      'A',
-      'B',
-      'C',
-      'D',
-      'E',
-      'F',
-      'G',
-      'H',
-      'I',
-      'J',
-    ]);
-
-    let minor = seriesGenerator([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
-
-    while (true) {
-      yield { major: major.next().value, minor: minor.next().value };
-    }
-  }
-
-  function valueAt(index) {
-    return values[index % values.length];
-  }
-
-  function valueOf({ major, minor }) {
-    console.log(major, minor);
-    const search = _.filter(values, { major: major, minor: minor });
-
-    if (!search) {
-      console.log('not found');
-      return undefined;
-    } else {
-      console.log('found');
-      return _.findIndex(values, { major: major, minor: minor });
-    }
-  }
-
-  function validate(input) {
-    return valueOf(input) !== undefined;
-  }
-
-  return { valueAt, valueOf, validate };
-};
-
-const ValueSet = (values) => {
-  const remainderValue = 10;
-  const paramSet = [
-    {
-      values: [3, 4, 5],
-      type: 'Wood',
-      score: 100
-    },
-    {
-      values: [6, 7, 8],
-      type: 'Fire',
-      score: 100
-    },
-    {
-      values: [9, 10, 11],
-      type: 'Metal',
-      score: 100
-    },
-    {
-      values: [12, 1, 2],
-      type: 'Water',
-      score: 100
-    },
-    {
-      values: [9, 1, 5],
-      type: 'Water',
-      score: 75
-    },
-    {
-      values: [12, 4, 8],
-      type: 'Wood',
-      score: 75
-    },
-    {
-      values: [3, 7, 11],
-      type: 'Fire',
-      score: 75
-    },
-    {
-      values: [6, 10, 2],
-      type: 'Metal',
-      score: 75
-    },
-    {
-      values: [12, 4, 8],
-      type: 'Wood',
-      score: 75
-    },
-    {
-      values: [5, 11, 2, 8],
-      type: 'Earth',
-      score: 75
-    },
-    {
-      values: [9, 1],
-      type: 'Water',
-      score: 50
-    },
-    {
-      values: [1, 5],
-      type: 'Water',
-      score: 50
-    },
-    {
-      values: [12, 4],
-      type: 'Wood',
-      score: 50
-    },
-    {
-      values: [4, 8],
-      type: 'Wood',
-      score: 50
-    },
-    {
-      values: [3, 7],
-      type: 'Fire',
-      score: 50
-    },
-    {
-      values: [7, 11],
-      type: 'Fire',
-      score: 50
-    },
-    {
-      values: [6, 10],
-      type: 'Metal',
-      score: 50
-    },
-    {
-      values: [10, 2],
-      type: 'Metal',
-      score: 50
-    },
-    {
-      values: [1, 2],
-      type: 'Earth',
-      score: 50
-    },
-    {
-      values: [3, 12],
-      type: 'Wood',
-      score: 50
-    },
-    {
-      values: [4, 11],
-      type: 'Fire',
-      score: 50
-    },
-    {
-      values: [5, 10],
-      type: 'Metal',
-      score: 50
-    },
-    {
-      values: [6, 9],
-      type: 'Water',
-      score: 50
-    },
-    {
-      values: [7, 8],
-      type: 'Fire',
-      score: 50
-    }
-  ];
-
-  const valueCounts = _(values)
-    .groupBy()
-    .pickBy(elem => elem)
-    .value();
-
-  const used = {};
-  _.keys(valueCounts).forEach(key => used[key] = false);
-
-  function isPresent(search) {
-    const results = {};
-    search.forEach(elem => results[elem] = _.indexOf(values, elem) !== -1);
-
-    return results;
-  }
-
-  function calculate() {
-    const score = {
-      Wood: 0,
-      Fire: 0,
-      Earth: 0,
-      Metal: 0,
-      Water: 0,
-    };
-
-    // calculate matches
-    paramSet.forEach(param => {
-      if (_.every(isPresent(param.values))) {
-        console.log('found:', param);
-
-        // calculate multiplier (x * y) combinations
-        let multiplier = 1;
-        param.values.forEach(val => multiplier *= valueCounts[val].length);
-
-        score[param.type] += param.score * multiplier;
-
-        // mark used values
-        param.values.forEach(val => used[val] = true);
-        console.log('updated:', used);
-      }
-    });
-
-    // calculate remainders
-    _.filter(used, val => !val).forEach(val => {
-      console.log(val, 'was not used, adding partial');
-      //score.Remainders += remainderValue;
-    });
-
-    return score;
-  }
-
-  return { calculate };
-};
-
 const Pillar = () => {
   const LIMIT = 60;
   const cycle = Cycle();
@@ -317,16 +75,12 @@ const Pillar = () => {
     return _.findIndex(cycleValues, find({stem, branch}));
   }
 
-  function validate({ stem, branch }) {
-    return find({stem, branch}) !== undefined;
-  }
-
-  return { valueAt, indexOf, find, validate };
+  return { valueAt, indexOf, find };
 };
 
 const FourPillars = (pillars, config) => {
 
-  // startup tasks - validate all pillar input, transform to full pillars
+  // init tasks - validate all input, transform to full pillars
   pillars = _.map(pillars, pillar => {
     const ref = Pillar();
     const obj = ref.find({
@@ -345,7 +99,7 @@ const FourPillars = (pillars, config) => {
   function isPresent(params) {
     const results = {};
     params.values.forEach(term => {
-      results[params.name] = _.findIndex(
+      results[term.search[config.language]] = _.findIndex(
         _.map(pillars, pillar => pillar[term.type]),
         term.search
       ) !== -1;
@@ -364,7 +118,7 @@ const FourPillars = (pillars, config) => {
     };
 
     const repeats = _(pillars)
-      .map(elem => elem.branch.english)
+      .map(elem => elem.branch[config.language])
       .groupBy()
       .pickBy(elem => elem)
       .value();
@@ -379,26 +133,28 @@ const FourPillars = (pillars, config) => {
 
         // calculate (x*y) combinations 
         let multiplier = 1;
-        set.values.forEach(val => multiplier *= repeats[val.search.english].length);
+        set.values.forEach(val => multiplier *= repeats[val.search[config.language]].length);
         score[set.type] += set.score * multiplier;
 
         // mark used values
         set.values.forEach(val => {
           const filtered = _.filter(
             pillars, 
-            item => item[val.type].english === val.search.english
+            item => item[val.type][config.language] === val.search[config.language]
           );
 
           filtered.forEach(pillar => pillar.used = true);
         });
       }
-
-      // calculate unused remainders
-      _.filter(pillars, {used: false}).forEach(pillar => {
-        console.log(pillar, 'was unused, should add to', pillar.branch.elements);
-        pillar.branch.elements.forEach(elem => score[elem] += config.unusedValue);
-      });
     });
+
+  console.log('current pillars:', pillars);
+
+  // calculate unused remainders
+  _.filter(pillars, {used: false}).forEach(pillar => {
+    console.log(pillar, 'was unused, should add to', pillar.branch.elements);
+    pillar.branch.elements.forEach(elem => score[elem] += config.unusedValue);
+  });
 
     return score;
   };
@@ -429,20 +185,238 @@ let test = FourPillars(
 
   // configuration for calculations
   {
+    language: 'english',
     unusedValue: 10,
     sets: [
       {
         values: [
           {type: 'branch', search: { english: 'yin' }},
           {type: 'branch', search: { english: 'chen' }},
-          {type: 'branch', search: { english: 'mao' }},
+          {type: 'branch', search: { english: 'mao' }}
         ],
         type: 'wood',
         score: 100,
-        name: 'test name, wood 100'
+        name: '[branch] (yin-chen-mao) wood 100'
+      },
+      {
+        values: [
+          {type: 'branch', search: { english: 'si' }},
+          {type: 'branch', search: { english: 'wu' }},
+          {type: 'branch', search: { english: 'wei' }}
+        ],
+        type: 'fire',
+        score: 100,
+        name: '[branch] (si-wu-wei) fire 100'
+      },
+      {
+        values: [
+          {type: 'branch', search: { english: 'shen' }},
+          {type: 'branch', search: { english: 'you' }},
+          {type: 'branch', search: { english: 'xu' }}
+        ],
+        type: 'metal',
+        score: 100,
+        name: '[branch] (shen-you-xu) metal 100'
+      },
+      {
+        values: [
+          {type: 'branch', search: { english: 'hai' }},
+          {type: 'branch', search: { english: 'zi' }},
+          {type: 'branch', search: { english: 'chou' }}
+        ],
+        type: 'water',
+        score: 100,
+        name: '[branch] (hai-zi-chou) water 100'
+      },
+      {
+        values: [
+          {type: 'branch', search: { english: 'shen' }},
+          {type: 'branch', search: { english: 'zi' }},
+          {type: 'branch', search: { english: 'chen' }}
+        ],
+        type: 'water',
+        score: 75,
+        name: '[branch] (shen-zi-chen) water 75'
+      },
+      {
+        values: [
+          {type: 'branch', search: { english: 'hai' }},
+          {type: 'branch', search: { english: 'mao' }},
+          {type: 'branch', search: { english: 'wei' }}
+        ],
+        type: 'wood',
+        score: 75,
+        name: '[branch] (hai-mao-wei) wood 75'
+      },
+      {
+        values: [
+          {type: 'branch', search: { english: 'yin' }},
+          {type: 'branch', search: { english: 'wu' }},
+          {type: 'branch', search: { english: 'xu' }}
+        ],
+        type: 'fire',
+        score: 75,
+        name: '[branch] (yin-wu-xu) fire 75'
+      },
+      {
+        values: [
+          {type: 'branch', search: { english: 'si' }},
+          {type: 'branch', search: { english: 'you' }},
+          {type: 'branch', search: { english: 'chou' }}
+        ],
+        type: 'metal',
+        score: 75,
+        name: '[branch] (si-you-chou) metal 75'
+      },
+      {
+        values: [
+          {type: 'branch', search: { english: 'hai' }},
+          {type: 'branch', search: { english: 'mao' }},
+          {type: 'branch', search: { english: 'wei' }}
+        ],
+        type: 'wood',
+        score: 75,
+        name: '[branch] (hai-mao-wei) wood 75'
+      },
+      {
+        values: [
+          {type: 'branch', search: { english: 'chen' }},
+          {type: 'branch', search: { english: 'xu' }},
+          {type: 'branch', search: { english: 'chou' }},
+          {type: 'branch', search: { english: 'wei' }}
+        ],
+        type: 'earth',
+        score: 75,
+        name: '[branch] (chen-xu-chou-wei) earth 75'
+      },
+      {
+        values: [
+          {type: 'branch', search: { english: 'shen' }},
+          {type: 'branch', search: { english: 'zi' }}
+        ],
+        type: 'water',
+        score: 50,
+        name: '[branch] (shen-zi) water 50'
+      },
+      {
+        values: [
+          {type: 'branch', search: { english: 'zi' }},
+          {type: 'branch', search: { english: 'chen' }}
+        ],
+        type: 'water',
+        score: 50,
+        name: '[branch] (zi-chen) water 50'
+      },
+      {
+        values: [
+          {type: 'branch', search: { english: 'hai' }},
+          {type: 'branch', search: { english: 'mao' }}
+        ],
+        type: 'wood',
+        score: 50,
+        name: '[branch] (hai-mao) wood 50'
+      },
+      {
+        values: [
+          {type: 'branch', search: { english: 'mao' }},
+          {type: 'branch', search: { english: 'wei' }}
+        ],
+        type: 'wood',
+        score: 50,
+        name: '[branch] (mao-wei) wood 50'
+      },
+      {
+        values: [
+          {type: 'branch', search: { english: 'yin' }},
+          {type: 'branch', search: { english: 'wu' }}
+        ],
+        type: 'fire',
+        score: 50,
+        name: '[branch] (yin-wu) fire 50'
+      },
+      {
+        values: [
+          {type: 'branch', search: { english: 'wu' }},
+          {type: 'branch', search: { english: 'xu' }}
+        ],
+        type: 'fire',
+        score: 50,
+        name: '[branch] (wu-xu) fire 50'
+      },
+      {
+        values: [
+          {type: 'branch', search: { english: 'si' }},
+          {type: 'branch', search: { english: 'you' }}
+        ],
+        type: 'metal',
+        score: 50,
+        name: '[branch] (si-you) metal 50'
+      },
+      {
+        values: [
+          {type: 'branch', search: { english: 'you' }},
+          {type: 'branch', search: { english: 'chou' }}
+        ],
+        type: 'metal',
+        score: 50,
+        name: '[branch] (you-chou) metal 50'
+      },
+      {
+        values: [
+          {type: 'branch', search: { english: 'zi' }},
+          {type: 'branch', search: { english: 'chou' }}
+        ],
+        type: 'earth',
+        score: 50,
+        name: '[branch] (zi-chou) earth 50'
+      },
+      {
+        values: [
+          {type: 'branch', search: { english: 'yin' }},
+          {type: 'branch', search: { english: 'hai' }}
+        ],
+        type: 'wood',
+        score: 50,
+        name: '[branch] (yin-hai) wood 50'
+      },
+      {
+        values: [
+          {type: 'branch', search: { english: 'mao' }},
+          {type: 'branch', search: { english: 'xu' }}
+        ],
+        type: 'fire',
+        score: 50,
+        name: '[branch] (mao-xu) fire 50'
+      },
+      {
+        values: [
+          {type: 'branch', search: { english: 'chen' }},
+          {type: 'branch', search: { english: 'you' }}
+        ],
+        type: 'metal',
+        score: 50,
+        name: '[branch] (chen-you) metal 50'
+      },
+      {
+        values: [
+          {type: 'branch', search: { english: 'si' }},
+          {type: 'branch', search: { english: 'chen' }}
+        ],
+        type: 'water',
+        score: 50,
+        name: '[branch] (si-chen) water 50'
+      },
+      {
+        values: [
+          {type: 'branch', search: { english: 'wu' }},
+          {type: 'branch', search: { english: 'wei' }}
+        ],
+        type: 'fire',
+        score: 50,
+        name: '[branch] (wu-wei) fire 50'
       }
     ]
   }
 );
 
-console.log(test.calculate());
+console.log('score:', test.calculate());
