@@ -5,17 +5,21 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
+    "start": "node index.js",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "lodash": "^4.17.5",
-    "winston": "^2.4.2"
+    "winston": "^2.4.2",
+    "snyk": "^1.316.1"
   },
   "devDependencies": {
     "eslint": "^4.19.1",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.11.0"
-  }
+  },
+  "snyk": true
 }
